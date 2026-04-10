@@ -6,8 +6,11 @@
 //! sensors and mesh members. The library provides a format for serialization/deserialization to and
 //! from the embedded-nano-mesh packet type
 
+use core::marker::PhantomData;
+
 use bitsong::{
-    ConstSongSizeValue, FromSong, FromSongError, HasSongSize, SongSize, ToSong, ToSongError,
+    ConstSongSizeImplFromConstSongSize, ConstSongSizeValue, FromSong, FromSongError, HasSongSize,
+    SongSize, ToSong, ToSongError,
 };
 use embedded_nano_mesh::PacketDataBytes;
 use num_enum::{FromPrimitive, IntoPrimitive};
@@ -72,4 +75,12 @@ pub enum SensorId {
     /// An unknown sensor
     #[num_enum(default)]
     Unknown = 0xFF,
+}
+
+/// Telemetry packets must be a maximum of 32 bytes
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, FromSong, ToSong, SongSize)]
+pub struct TelemetryPacket {
+    kind: TelemetryType,
+    sensor: SensorId,
+    data: [u8; 30],
 }
