@@ -8,9 +8,10 @@ description = "A embedded-nano-mesh telemetry type library for sensors, nodes, a
 keywords = ["no_std", "embedded"]
 readme = "./README.md"
 categories = ["no_std", "embedded"]
-repository = ""
+repository = "https://github.com/coffee-and-telesense/nano-mesh-telemetry"
 
 [dependencies]
+embedded-nano-mesh = "2.1"
 
 [lints.rust]
 ambiguous_negative_literals = "warn"
