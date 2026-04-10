@@ -12,6 +12,8 @@ repository = "https://github.com/coffee-and-telesense/nano-mesh-telemetry"
 
 [dependencies]
 embedded-nano-mesh = "2.1"
+bitsong = "0.1"
+num_enum = { version = "0.7", default-features = false }
 
 [lints.rust]
 ambiguous_negative_literals = "warn"
