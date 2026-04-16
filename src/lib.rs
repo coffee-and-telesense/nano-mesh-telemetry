@@ -154,8 +154,12 @@ pub enum TelemetryPacket {
 }
 
 /// Node statistics structure
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Default, FromSong, ToSong, SongSize)]
+#[derive(Clone, Copy, Debug, Default, FromSong, ToSong, SongSize)]
 pub struct NodeStatsPacket {
+    /// UNIX epoch timestamp
+    pub epoch: u32,
+    /// Increments once per reboot, stored in non-volatile memory
+    pub reboot_count: u8,
     /// Number of transmit attempts failed (`SendingQueueIsFull`)
     pub tx_fail: u16,
     /// Packets dropped because the receive queue was full
@@ -166,21 +170,29 @@ pub struct NodeStatsPacket {
     pub rx_overlap: u16,
     /// Transit queue full events
     pub queue_full: u16,
-    /// UNIX epoch timestamp
-    pub epoch: u32,
+    /// Bad packets received (CRC failures etc.)
+    pub rx_bad: u16,
+    /// Online nodes observed
+    pub num_online_nodes: u8,
+    /// Total nodes known
+    pub num_total_nodes: u8,
+    /// Channel utilization 0.0–1.0
+    pub channel_util: f32,
+    /// Air utilization transmit 0.0–1.0
+    pub air_util_tx: f32,
 }
 
 /// Sensor measurements structure
 #[derive(Debug, Clone, Copy, FromSong, ToSong, SongSize)]
 pub struct SensorPacket {
+    /// UNIX epoch timestamp
+    pub epoch: u32,
     /// The ID of the sensor used
     pub sensor_id: SensorId,
     /// The count of measurements
     pub count: u8,
     /// The measurements
     pub measurements: [Measurement; MAX_MEASUREMENTS],
-    /// UNIX epoch timestamp
-    pub epoch: u32,
 }
 
 #[cfg(test)]
@@ -199,13 +211,13 @@ mod tests {
     #[test]
     fn sensor_packet_wire_size() {
         let pkt = SensorPacket {
+            epoch: 0,
             sensor_id: SensorId::Unknown,
             count: 0,
             measurements: [Measurement {
                 kind: MeasurementKind::Unknown,
                 value: 0.0,
             }; MAX_MEASUREMENTS],
-            epoch: 0,
         };
         assert_eq!(pkt.song_size(), 31, "SensorPacket must be 31 wire bytes");
     }
@@ -213,19 +225,19 @@ mod tests {
     #[test]
     fn node_stats_wire_size() {
         let pkt = NodeStatsPacket::default();
-        assert_eq!(pkt.song_size(), 14, "NodeStatsPacket must be 14 wire bytes");
+        assert_eq!(pkt.song_size(), 27, "NodeStatsPacket must be 27 wire bytes");
     }
 
     #[test]
     fn telemetry_packet_fits_content_size() {
         let pkt = TelemetryPacket::Sensor(SensorPacket {
+            epoch: 0,
             sensor_id: SensorId::Unknown,
             count: 0,
             measurements: [Measurement {
                 kind: MeasurementKind::Unknown,
                 value: 0.0,
             }; MAX_MEASUREMENTS],
-            epoch: 0,
         });
         assert!(
             pkt.song_size() <= 32,
