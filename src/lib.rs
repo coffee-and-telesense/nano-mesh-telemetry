@@ -153,6 +153,23 @@ pub enum TelemetryPacket {
     NodeStats(NodeStatsPacket),
 }
 
+impl TelemetryPacket {
+    /// Deserialize a `TelemetryPacket` from `PacketDataBytes`
+    #[must_use]
+    pub fn from_packet_data(data: &PacketDataBytes) -> Option<Self> {
+        Self::from_song(data.as_slice()).ok()
+    }
+
+    /// Serialize a `TelemetryPacket` to `PacketDataBytes`
+    #[must_use]
+    pub fn to_packet_data(&self) -> Option<PacketDataBytes> {
+        let mut buf = [0u8; 32];
+        let written = self.song_size();
+        self.to_song(&mut buf).ok()?;
+        PacketDataBytes::from_slice(&buf[..written]).ok()
+    }
+}
+
 /// Node statistics structure
 #[derive(Clone, Copy, Debug, Default, FromSong, ToSong, SongSize)]
 pub struct NodeStatsPacket {
@@ -244,5 +261,79 @@ mod tests {
             "TelemetryPacket must fit in 32-byte CONTENT_SIZE, got {}",
             pkt.song_size()
         );
+    }
+    #[test]
+    fn telemetry_packet_sensor_roundtrip() {
+        let original = TelemetryPacket::Sensor(SensorPacket {
+            sensor_id: SensorId::Unknown,
+            count: 2,
+            epoch: 1_735_689_601,
+            measurements: [
+                Measurement {
+                    kind: MeasurementKind::Temperature,
+                    value: 23.5,
+                },
+                Measurement {
+                    kind: MeasurementKind::Co2,
+                    value: 412.0,
+                },
+                Measurement {
+                    kind: MeasurementKind::Unknown,
+                    value: 0.0,
+                },
+                Measurement {
+                    kind: MeasurementKind::Unknown,
+                    value: 0.0,
+                },
+                Measurement {
+                    kind: MeasurementKind::Unknown,
+                    value: 0.0,
+                },
+            ],
+        });
+
+        let bytes = original.to_packet_data().expect("serialization failed");
+        let decoded = TelemetryPacket::from_packet_data(&bytes).expect("deserialization failed");
+
+        match decoded {
+            TelemetryPacket::Sensor(s) => {
+                assert_eq!(s.epoch, 1_735_689_601);
+                assert_eq!(s.count, 2);
+                assert_eq!(s.measurements[0].kind, MeasurementKind::Temperature);
+                assert!((s.measurements[0].value - 23.5).abs() < f32::EPSILON);
+            }
+            _ => panic!("wrong variant"),
+        }
+    }
+
+    #[test]
+    fn telemetry_packet_node_stats_roundtrip() {
+        let original = TelemetryPacket::NodeStats(NodeStatsPacket {
+            epoch: 1_735_689_601,
+            reboot_count: 3,
+            tx_fail: 10,
+            rx_drop: 2,
+            rx_useful: 100,
+            rx_overlap: 1,
+            queue_full: 0,
+            rx_bad: 5,
+            num_online_nodes: 4,
+            num_total_nodes: 6,
+            channel_util: 0.15,
+            air_util_tx: 0.08,
+        });
+
+        let bytes = original.to_packet_data().expect("serialization failed");
+        let decoded = TelemetryPacket::from_packet_data(&bytes).expect("deserialization failed");
+
+        match decoded {
+            TelemetryPacket::NodeStats(ns) => {
+                assert_eq!(ns.epoch, 1_735_689_601);
+                assert_eq!(ns.reboot_count, 3);
+                assert_eq!(ns.rx_useful, 100);
+                assert!((ns.channel_util - 0.15).abs() < f32::EPSILON);
+            }
+            _ => panic!("wrong variant"),
+        }
     }
 }
