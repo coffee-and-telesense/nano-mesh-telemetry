@@ -179,6 +179,8 @@ pub struct SensorPacket {
     pub count: u8,
     /// The measurements
     pub measurements: [Measurement; MAX_MEASUREMENTS],
+    /// UNIX epoch timestamp
+    pub epoch: u32,
 }
 
 #[cfg(test)]
@@ -203,8 +205,9 @@ mod tests {
                 kind: MeasurementKind::Unknown,
                 value: 0.0,
             }; MAX_MEASUREMENTS],
+            epoch: 0,
         };
-        assert_eq!(pkt.song_size(), 27, "SensorPacket must be 27 wire bytes");
+        assert_eq!(pkt.song_size(), 31, "SensorPacket must be 31 wire bytes");
     }
 
     #[test]
@@ -222,6 +225,7 @@ mod tests {
                 kind: MeasurementKind::Unknown,
                 value: 0.0,
             }; MAX_MEASUREMENTS],
+            epoch: 0,
         });
         assert!(
             pkt.song_size() <= 32,
