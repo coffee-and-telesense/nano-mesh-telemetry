@@ -10,6 +10,7 @@ use bitsong::{
     ConstSongSizeImplFromConstSongSize, ConstSongSizeValue, FromSong, FromSongError, HasSongSize,
     SongDiscriminant, SongSize, ToSong, ToSongError,
 };
+use core::fmt::Debug;
 use embedded_nano_mesh::PacketDataBytes;
 use num_enum::{FromPrimitive, IntoPrimitive};
 
@@ -177,18 +178,22 @@ pub struct NodeStatsPacket {
     pub epoch: u32,
     /// Increments once per reboot, stored in non-volatile memory
     pub reboot_count: u8,
-    /// Number of transmit attempts failed (`SendingQueueIsFull`)
+    /// Number of transmit attempts failed (`SendError::SendingQueueIsFull`)
     pub tx_fail: u16,
-    /// Packets dropped because the receive queue was full
+    /// Packets dropped because the receive queue was full (`NodeUpdateError::is_receive_queue_full`)
     pub rx_drop: u16,
     /// New non-duplicate packets successfully received
     pub rx_useful: u16,
     /// Receive queue overflow events (proxy for simultaneous receptions)
     pub rx_overlap: u16,
-    /// Transit queue full events
+    /// Transit queue full events (`NodeUpdateError::is_transit_queue_full`)
     pub queue_full: u16,
     /// Bad packets received (CRC failures etc.)
     pub rx_bad: u16,
+    /// Number of transmit attempts failed due to timeout (`SpecialSendError::Timeout`)
+    pub tx_timeout: u16,
+    /// Number of transmit attempts failed due to sending queue full (`SpecialSendError::SendingQueueIsFull`)
+    pub special_tx_fail: u16,
     /// Online nodes observed
     pub num_online_nodes: u8,
     /// Total nodes known
@@ -242,7 +247,7 @@ mod tests {
     #[test]
     fn node_stats_wire_size() {
         let pkt = NodeStatsPacket::default();
-        assert_eq!(pkt.song_size(), 27, "NodeStatsPacket must be 27 wire bytes");
+        assert_eq!(pkt.song_size(), 31, "NodeStatsPacket must be 31 wire bytes");
     }
 
     #[test]
@@ -317,6 +322,8 @@ mod tests {
             rx_overlap: 1,
             queue_full: 0,
             rx_bad: 5,
+            tx_timeout: 1,
+            special_tx_fail: 1,
             num_online_nodes: 4,
             num_total_nodes: 6,
             channel_util: 0.15,
