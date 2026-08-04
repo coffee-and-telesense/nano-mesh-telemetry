@@ -11,7 +11,7 @@ categories = ["no_std", "embedded"]
 repository = "https://github.com/coffee-and-telesense/nano-mesh-telemetry"
 
 [dependencies]
-embedded-nano-mesh = "2.1"
+embedded-nano-mesh = "3.2"
 bitsong = "0.1"
 num_enum = { version = "0.7", default-features = false }
 
@@ -21,7 +21,6 @@ future-incompatible = "warn"
 keyword-idents = "warn"
 let_underscore_drop = "warn"
 missing_debug_implementations = "warn"
-missing_docs = "warn"
 missing_copy_implementations = "warn"
 nonstandard-style = "warn"
 redundant_imports = "warn"
